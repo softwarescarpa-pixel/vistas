@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Calidad - Inspección Completa</title>
+    <style>
+        :root {
+            --bg-dark: #0A192F;
+            --card-bg: #112240;
+            --text-main: #E6F1FF;
+            --text-muted: #8892B0;
+            --accent-orange: #FF6B00;
+            --success-green: #00B894;
+            --border-color: #233554;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: #000;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            color: var(--text-main);
+        }
+        .mobile-container {
+            width: 100%;
+            max-width: 414px;
+            background-color: var(--bg-dark);
+            min-height: 100vh;
+            position: relative;
+            padding-bottom: 90px;
+        }
+        
+        /* Header Editable & Tabs */
+        .header {
+            padding: 20px 20px 10px 20px;
+            background-color: var(--bg-dark);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .header-title input { 
+            font-size: 22px; 
+            font-weight: bold; 
+            color: var(--text-main);
+            background: transparent;
+            border: 1px dashed transparent;
+            border-radius: 6px;
+            padding: 2px 5px;
+            width: 100%;
+            box-sizing: border-box;
+            margin-left: -5px;
+            transition: 0.2s;
+        }
+        .header-title input:hover { border-color: var(--border-color); }
+        .header-title input:focus { border-color: var(--accent-orange); outline: none; background: var(--card-bg); }
+        
+        .header-sub { 
+            display: flex; 
+            align-items: center; 
+            gap: 5px; 
+            font-size: 14px; 
+            color: var(--text-muted); 
+            margin-bottom: 15px; 
+            margin-top: 5px;
+        }
+        .header-sub input {
+            font-size: 14px;
+            color: var(--text-muted);
+            background: transparent;
+            border: 1px dashed transparent;
+            border-radius: 4px;
+            padding: 2px 4px;
+            transition: 0.2s;
+        }
+        .header-sub input:hover { border-color: var(--border-color); }
+        .header-sub input:focus { border-color: var(--accent-orange); outline: none; color: var(--text-main); background: var(--card-bg); }
+        .header-sub input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.6; cursor: pointer; }
+        
+        .tabs { display: flex; gap: 10px; }
+        .tab-btn {
+            flex: 1; background-color: var(--card-bg); color: var(--text-muted);
+            border: 1px solid var(--border-color); padding: 10px 5px;
+            border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background-color: rgba(255, 107, 0, 0.1); color: var(--accent-orange);
+            border-color: var(--accent-orange);
+        }
+
+        .tab-content { display: none; padding: 15px; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Form Grids */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; }
+        .form-group.full { grid-column: 1 / -1; }
+        .form-group label { font-size: 12px; color: var(--text-muted); }
+        .form-group input, .form-group select, .form-group textarea {
+            background-color: var(--card-bg); border: 1px solid var(--border-color);
+            color: white; padding: 12px; border-radius: 8px; font-size: 15px;
+            width: 100%; box-sizing: border-box; font-family: inherit;
+        }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+
+        /* Selector Dinámico de Defectos */
+        .add-defect-bar {
+            display: flex; gap: 10px; margin-bottom: 20px;
+            background: var(--card-bg); padding: 10px; border-radius: 10px;
+            border: 1px dashed var(--accent-orange);
+        }
+        .add-defect-bar select {
+            flex: 1; background: var(--bg-dark); color: white;
+            border: 1px solid var(--border-color); padding: 10px;
+            border-radius: 6px; font-size: 14px;
+        }
+        .add-defect-bar button {
+            background: var(--accent-orange); color: white; border: none;
+            padding: 0 15px; border-radius: 6px; font-weight: bold; cursor: pointer;
+        }
+
+        /* Acordeones de Defectos */
+        details {
+            background-color: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: 10px; margin-bottom: 12px; overflow: hidden;
+            animation: fadeIn 0.3s;
+        }
+        summary {
+            padding: 15px; font-weight: 600; font-size: 15px; cursor: pointer;
+            list-style: none; display: flex; justify-content: space-between; align-items: center;
+        }
+        summary::-webkit-details-marker { display: none; }
+        summary::after { content: '+'; font-size: 20px; color: var(--accent-orange); }
+        details[open] summary::after { content: '−'; }
+        details[open] summary { border-bottom: 1px dashed var(--border-color); }
+        
+        .defect-body { padding: 15px; background-color: rgba(0,0,0,0.2); }
+        
+        /* Filas de inputs */
+        .level-row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 10px; font-size: 14px;
+        }
+        .level-inputs { display: flex; gap: 8px; align-items: center; }
+        .level-inputs input {
+            width: 50px; background: var(--bg-dark); border: 1px solid var(--border-color);
+            color: white; padding: 8px; border-radius: 6px; text-align: center;
+        }
+        .level-inputs input.readonly { color: var(--success-green); background: transparent; border: none; font-weight: bold; }
+        .level-inputs span { font-size: 12px; color: var(--text-muted); width: 25px; }
+
+        /* Galería de Fotos */
+        .photo-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color); }
+        .photo-section h4 { margin: 0 0 10px 0; font-size: 12px; color: var(--text-muted); }
+        .photo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .photo-box {
+            aspect-ratio: 1; background-color: var(--bg-dark); border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid var(--border-color); overflow: hidden;
+        }
+        .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+        .add-photo-btn {
+            border: 1px dashed var(--text-muted); color: var(--text-muted);
+            cursor: pointer; font-size: 24px; background: transparent;
+        }
+        .add-photo-btn:hover { border-color: var(--accent-orange); color: var(--accent-orange); }
+
+        .btn-save {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 380px; background-color: var(--accent-orange);
+            color: white; border: none; padding: 16px;
+            border-radius: 12px; font-size: 16px; font-weight: bold;
+            box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3); cursor: pointer; z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <!-- HEADER EDITABLE -->
+        <div class="header">
+            <div class="header-title">
+                <input type="text" id="input-muestra" value="Muestra N° 7" title="Editar Muestra">
+            </div>
+            <div class="header-sub">
+                Lote <input type="text" id="input-lote" value="087-26" style="width:65px;" title="Editar Lote"> • 
+                <input type="date" id="input-date" value="2026-03-28" style="width:115px;" title="Editar Fecha">
+            </div>
+            <div class="tabs">
+                <button class="tab-btn" onclick="switchTab('pesos')">1. Pesos y Empaque</button>
+                <button class="tab-btn" onclick="switchTab('defectos')">2. Defectos</button>
+                <button class="tab-btn active" onclick="switchTab('evaluacion')">3. Evaluación</button>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 1: PESOS Y CAJAS -->
+        <div id="pesos" class="tab-content">
+            
+            <!-- FLUJO DE EMPAQUE (MACRO A MICRO) -->
+            <div class="photo-section" style="border-top: none; padding-top: 0; margin-top: 0;">
+                <h4>1. MASTER BOX (Todas las cajas)</h4>
+                <div class="photo-grid" id="grid-master">
+                    <button class="photo-box add-photo-btn" onclick="addPhoto('grid-master')">+</button>
+                </div>
+            </div>
+
+            <div class="photo-section">
+                <h4>2. CAJA DE MUESTRA (1 por cada 100)</h4>
+                <div class="photo-grid" id="grid-caja-muestra">
+                    <button class="photo-box add-photo-btn" onclick="addPhoto('grid-caja-muestra')">+</button>
+                </div>
+            </div>
+
+            <div class="photo-section">
+                <h4>3. CAJA INTERNA (Cajita pequeña)</h4>
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label>Peso de la Caja Interna Sola (g)</label>
+                    <input type="number" placeholder="Ej. 150">
+                </div>
+                <div class="photo-grid" id="grid-caja-interna">
+                    <button class="photo-box add-photo-btn" onclick="addPhoto('grid-caja-interna')">+</button>
+                </div>
+            </div>
+
+            <!-- DATOS DEL CAMARÓN (CON EVIDENCIA FOTOGRÁFICA) -->
+            <div class="photo-section">
+                <h4>4. DATOS DEL PRODUCTO (Camarón)</h4>
+            </div>
+            <div class="form-grid">
+                
+                <!-- Temperatura con Foto -->
+                <div class="form-group" style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px dashed var(--border-color);">
+                    <label>Temperatura (°C)</label>
+                    <input type="number" placeholder="-18" style="background: var(--bg-dark);">
+                    <div class="photo-grid" id="grid-temp" style="grid-template-columns: repeat(3, 1fr); margin-top: 5px; gap: 5px;">
+                        <button class="photo-box add-photo-btn" onclick="addPhoto('grid-temp')" style="font-size: 16px; padding: 2px;" title="Evidencia Temperatura">📷+</button>
+                    </div>
+                </div>
+
+                <!-- Talla con Foto -->
+                <div class="form-group" style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px dashed var(--border-color);">
+                    <label>Talla Declarada</label>
+                    <input type="text" placeholder="31-35" style="background: var(--bg-dark);">
+                    <div class="photo-grid" id="grid-talla" style="grid-template-columns: repeat(3, 1fr); margin-top: 5px; gap: 5px;">
+                        <button class="photo-box add-photo-btn" onclick="addPhoto('grid-talla')" style="font-size: 16px; padding: 2px;" title="Evidencia Talla">📷+</button>
+                    </div>
+                </div>
+
+                <!-- Peso Bruto con Foto -->
+                <div class="form-group" style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px dashed var(--border-color);">
+                    <label>Peso Bruto (g)</label>
+                    <input type="number" placeholder="4870" style="background: var(--bg-dark);">
+                    <div class="photo-grid" id="grid-pbruto" style="grid-template-columns: repeat(3, 1fr); margin-top: 5px; gap: 5px;">
+                        <button class="photo-box add-photo-btn" onclick="addPhoto('grid-pbruto')" style="font-size: 16px; padding: 2px;" title="Evidencia Balanza Bruto">📷+</button>
+                    </div>
+                </div>
+
+                <!-- Peso Neto con Foto -->
+                <div class="form-group" style="background: rgba(255, 107, 0, 0.05); padding: 10px; border-radius: 8px; border: 1px dashed var(--accent-orange);">
+                    <label style="color: var(--accent-orange);">Peso Neto Drenado</label>
+                    <input type="number" placeholder="3680" style="background: var(--bg-dark); color: var(--accent-orange); font-weight: bold; border-color: var(--accent-orange);">
+                    <div class="photo-grid" id="grid-pneto" style="grid-template-columns: repeat(3, 1fr); margin-top: 5px; gap: 5px;">
+                        <button class="photo-box add-photo-btn" onclick="addPhoto('grid-pneto')" style="font-size: 16px; padding: 2px; color: var(--accent-orange); border-color: var(--accent-orange);" title="Evidencia Balanza Neto">📷+</button>
+                    </div>
+                </div>
+
+                <!-- Conteo sin foto (Normal) -->
+                <div class="form-group"><label>Conteo Total</label><input type="number" placeholder="132"></div>
+                <div class="form-group"><label>Conteo por Lb.</label><input type="number" placeholder="36"></div>
+                
+                <!-- Cálculo Automático de Uniformidad -->
+                <div class="form-group full"><label>Uniformidad (Máx/Mín)</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" id="uni-max" placeholder="Mayor (ej. 338)" oninput="calcUniformity()">
+                        <input type="number" id="uni-min" placeholder="Menor (ej. 218)" oninput="calcUniformity()">
+                        <input type="text" id="uni-result" placeholder="Ratio" readonly style="width: 70px; background: var(--bg-dark); color: var(--success-green); font-weight: bold; text-align: center; border: none;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 2: DEFECTOS DINÁMICOS -->
+        <div id="defectos" class="tab-content">
+            <div class="add-defect-bar">
+                <select id="defect-selector">
+                    <option value="">Seleccione un defecto...</option>
+                </select>
+                <button onclick="addDefect()">Añadir</button>
+            </div>
+            <div id="defects-container">
+                <!-- Se llena dinamicamente -->
+            </div>
+        </div>
+
+        <!-- PESTAÑA 3: EVALUACIÓN Y FIN -->
+        <div id="evaluacion" class="tab-content active">
+            <div class="form-grid">
+                <div class="form-group full"><label>Cantidad (Master Boxes)</label><input type="number" placeholder="800"></div>
+                <div class="form-group"><label>Olor</label>
+                    <select><option>OK</option><option>Rechazado</option></select>
+                </div>
+                <div class="form-group"><label>Sabor</label>
+                    <select><option>OK</option><option>Rechazado</option></select>
+                </div>
+                <div class="form-group"><label>Color</label>
+                    <select><option>A1</option><option>A2</option><option selected>A3</option><option>A4</option></select>
+                </div>
+                <div class="form-group"><label>Textura Cocida</label>
+                    <select><option>OK</option><option>Rechazado</option></select>
+                </div>
+                
+                <!-- Panel de Observaciones Adicionales -->
+                <div class="form-group full">
+                    <label>Observaciones Adicionales (Opcional)</label>
+                    <textarea placeholder="Escriba cualquier detalle o anomalía encontrada durante la inspección de esta muestra..."></textarea>
+                </div>
+
+                <div class="form-group full"><label>Decisión Final de la Muestra</label>
+                    <select style="background-color: rgba(0, 184, 148, 0.1); color: var(--success-green); border-color: var(--success-green); font-weight: bold; font-size: 16px;">
+                        <option>A - Aprobado</option>
+                        <option>R - Rechazado</option>
+                        <option>Aprobado con Observaciones</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-save" onclick="guardarDatos()">Guardar <span id="btn-muestra-texto">Muestra N° 7</span></button>
+    </div>
+
+    <script>
+        // Actualizar el texto del botón al cambiar el nombre de la muestra
+        document.getElementById('input-muestra').addEventListener('input', function(e) {
+            document.getElementById('btn-muestra-texto').innerText = e.target.value || 'Muestra';
+        });
+
+        // Función para el botón de guardar
+        function guardarDatos() {
+            const nombreMuestra = document.getElementById('input-muestra').value || 'Muestra';
+            alert(`✅ Datos de "${nombreMuestra}" guardados localmente de forma exitosa (Sincronización Offline activada).`);
+        }
+
+        // Calcular Uniformidad en vivo
+        function calcUniformity() {
+            let max = parseFloat(document.getElementById('uni-max').value);
+            let min = parseFloat(document.getElementById('uni-min').value);
+            let res = document.getElementById('uni-result');
+            if (max && min && min > 0) {
+                res.value = (max / min).toFixed(2);
+            } else {
+                res.value = "";
+            }
+        }
+
+        // Base de datos de Defectos
+        const defectsDB = {
+            "dehydration": { name: "Deshidratación", hasLevels: true },
+            "decomposition": { name: "Descomposición", hasLevels: true },
+            "melanosis": { name: "Melanosis", hasLevels: true },
+            "foreign_material": { name: "Material extraño", hasLevels: false },
+            "heat_stress": { name: "Estrés térmico", hasLevels: false },
+            "bad_cut": { name: "Mal corte", hasLevels: false },
+            "discoloration": { name: "Decoloración", hasLevels: false },
+            "shell": { name: "Pleópodos, pereiópodos, shell", hasLevels: false },
+            "veins": { name: "Venas", hasLevels: false },
+            "broken": { name: "Quebrados", hasLevels: false },
+            "bad_flavor": { name: "Mal sabor", hasLevels: false },
+            "mix_colors": { name: "Mezcla de colores", hasLevels: false }
+        };
+
+        window.onload = function() {
+            const selector = document.getElementById('defect-selector');
+            for (const [id, data] of Object.entries(defectsDB)) {
+                let option = document.createElement('option');
+                option.value = id;
+                option.text = data.name;
+                selector.appendChild(option);
+            }
+        };
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function addPhoto(gridId) {
+            const grid = document.getElementById(gridId);
+            const addBtn = grid.querySelector('.add-photo-btn');
+            const newPhoto = document.createElement('div');
+            newPhoto.className = 'photo-box';
+            newPhoto.innerHTML = `<img src="https://via.placeholder.com/150/112240/FF6B00?text=Foto" alt="Foto">`;
+            grid.insertBefore(newPhoto, addBtn);
+        }
+
+        function addDefect() {
+            const selector = document.getElementById('defect-selector');
+            const selectedId = selector.value;
+            if (!selectedId) return;
+            
+            const defectData = defectsDB[selectedId];
+            const container = document.getElementById('defects-container');
+            const gridId = `grid-${selectedId}`;
+
+            let bodyHTML = '';
+            if (defectData.hasLevels) {
+                bodyHTML = `
+                    <div class="level-row">
+                        <span>Leve</span>
+                        <div class="level-inputs"><input type="number" placeholder="0"><span>N°</span> <input type="text" value="0.00" class="readonly" readonly><span>%</span></div>
+                    </div>
+                    <div class="level-row">
+                        <span>Moderada</span>
+                        <div class="level-inputs"><input type="number" placeholder="0"><span>N°</span> <input type="text" value="0.00" class="readonly" readonly><span>%</span></div>
+                    </div>
+                    <div class="level-row">
+                        <span>Severa</span>
+                        <div class="level-inputs"><input type="number" placeholder="0"><span>N°</span> <input type="text" value="0.00" class="readonly" readonly><span>%</span></div>
+                    </div>
+                `;
+            } else {
+                bodyHTML = `
+                    <div class="level-row">
+                        <span>Total Encontrado</span>
+                        <div class="level-inputs"><input type="number" placeholder="0"><span>N°</span> <input type="text" value="0.00" class="readonly" readonly><span>%</span></div>
+                    </div>
+                `;
+            }
+
+            const detailsElement = document.createElement('details');
+            detailsElement.open = true;
+            detailsElement.innerHTML = `
+                <summary>${defectData.name} <span style="font-size:12px; color:var(--text-muted)">0.00%</span></summary>
+                <div class="defect-body">
+                    ${bodyHTML}
+                    <div class="photo-section">
+                        <h4>EVIDENCIA: ${defectData.name.toUpperCase()}</h4>
+                        <div class="photo-grid" id="${gridId}">
+                            <button class="photo-box add-photo-btn" onclick="addPhoto('${gridId}')">+</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(detailsElement);
+            selector.options[selector.selectedIndex].remove();
+            selector.value = ""; 
+        }
+    </script>
+</body>
+</html>
